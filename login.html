@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Evinra Box Office — Sign In</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.x/dist/tabler-icons.min.css">
+  <link rel="stylesheet" href="assets/tokens.css">
+
+  <style>
+    /* ── Reset ──────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: var(--body);
+      -webkit-font-smoothing: antialiased;
+      background: #F0F4F2;
+      color: var(--text);
+    }
+
+    a { text-decoration: none; }
+
+    /* ── Layout ─────────────────────────────── */
+    .login-wrap {
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── BRAND PANEL (left) — always teal ───── */
+    .brand-panel {
+      flex: 0 0 52%;
+      background: linear-gradient(148deg, #1E9882 0%, #10705F 42%, #0A5A4C 100%);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      text-align: center;
+      gap: 28px;
+      padding: 48px 56px 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Dot grid texture */
+    .brand-panel::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(255,255,255,.13) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Top-right glow */
+    .brand-panel::after {
+      content: '';
+      position: absolute;
+      top: -8%;
+      right: -8%;
+      width: 55%;
+      height: 55%;
+      background: radial-gradient(ellipse, rgba(255,255,255,.08) 0%, transparent 65%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .brand-panel > * { position: relative; z-index: 1; }
+
+    /* Decorative rings bottom-right — must come after brand-panel > * to keep position:absolute */
+    .brand-deco {
+      position: absolute !important;
+      bottom: -80px;
+      right: -80px;
+      width: 380px;
+      height: 380px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,.07);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .brand-deco::before {
+      content: '';
+      position: absolute;
+      inset: 44px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.05);
+    }
+    .brand-deco::after {
+      content: '';
+      position: absolute;
+      inset: 88px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.04);
+    }
+
+    /* Logo */
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo-text {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .brand-name {
+      font-family: var(--display);
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -.4px;
+    }
+
+    .brand-tagline {
+      font-family: var(--mono);
+      font-size: 8.5px;
+      font-weight: 500;
+      letter-spacing: 2.5px;
+      color: rgba(255,255,255,.42);
+      text-transform: uppercase;
+    }
+
+    /* Hero text block */
+    .brand-hero { width: 100%; max-width: 440px; }
+
+    .brand-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.62);
+      margin-bottom: 14px;
+    }
+
+    .brand-badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.75);
+      box-shadow: 0 0 8px rgba(255,255,255,.50);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50%       { opacity: .5; transform: scale(.8); }
+    }
+
+    .brand-headline {
+      font-family: var(--display);
+      font-size: clamp(20px, 1.6vw, 26px);
+      font-weight: 800;
+      line-height: 1.20;
+      letter-spacing: -.4px;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+
+    .brand-headline .accent {
+      color: #A4EDD8;
+    }
+
+    .brand-desc {
+      font-size: 13.5px;
+      line-height: 1.60;
+      color: rgba(255,255,255,.50);
+      max-width: 360px;
+      margin: 0 auto;
+    }
+
+    /* Feature list */
+    .brand-features {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+      width: 100%;
+    }
+
+    .brand-feat {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      max-width: 360px;
+      width: 100%;
+      text-align: left;
+    }
+
+    .feat-icon {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    .brand-feat span {
+      font-size: 13px;
+      color: rgba(255,255,255,.56);
+      line-height: 1.45;
+    }
+
+    /* Copyright */
+    .brand-copyright {
+      font-size: 11px;
+      color: rgba(255,255,255,.22);
+      font-family: var(--mono);
+      margin-top: auto;
+    }
+
+    /* ── FORM PANEL (right) — clean white ───── */
+    .form-panel {
+      flex: 1;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 48px;
+      overflow-y: auto;
+      border-left: none;
+      box-shadow: -4px 0 32px rgba(10,82,76,.10);
+    }
+
+    .form-card {
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+
+    /* Form header */
+    .form-header { display: flex; flex-direction: column; gap: 6px; }
+
+    .form-eyebrow {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #1E8A75;
+    }
+
+    .form-title {
+      font-family: var(--display);
+      font-size: 26px;
+      font-weight: 700;
+      color: #0E1614;
+      letter-spacing: -.4px;
+      line-height: 1.15;
+    }
+
+    .form-sub {
+      font-size: 13.5px;
+      color: #7B8C88;
+      margin-top: 3px;
+    }
+
+    /* Fields */
+    .fields { display: flex; flex-direction: column; gap: 18px; }
+
+    .field-group { display: flex; flex-direction: column; gap: 7px; }
+
+    .field-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .field-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: .4px;
+      text-transform: uppercase;
+      color: #4F5E5B;
+    }
+
+    .forgot-link {
+      font-size: 11.5px;
+      color: #1E8A75;
+      transition: opacity .15s;
+    }
+    .forgot-link:hover { opacity: .70; }
+
+    .field-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .field-icon {
+      position: absolute;
+      left: 13px;
+      font-size: 15px;
+      color: #9BADA9;
+      pointer-events: none;
+      transition: color .15s;
+    }
+
+    .field-input {
+      width: 100%;
+      height: 46px;
+      padding: 0 44px 0 40px;
+      background: #F3F6F5;
+      border: 1.5px solid rgba(14,22,20,.12);
+      border-radius: 10px;
+      color: #0E1614;
+      font-family: var(--body);
+      font-size: 14px;
+      outline: none;
+      transition: border-color .18s, background .18s, box-shadow .18s;
+    }
+
+    .field-input::placeholder { color: #9BADA9; }
+
+    .field-input:focus {
+      border-color: #1E8A75;
+      background: #FFFFFF;
+      box-shadow: 0 0 0 3px rgba(30,138,117,.10);
+    }
+
+    .field-wrap:focus-within .field-icon { color: #1E8A75; }
+
+    .field-eye {
+      position: absolute;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: none;
+      color: #9BADA9;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 6px;
+      font-size: 15px;
+      transition: color .15s, background .15s;
+    }
+    .field-eye:hover { color: #0E1614; background: #ECF0EF; }
+
+    /* Remember me */
+    .field-remember { display: flex; align-items: center; }
+
+    .check-label {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      cursor: pointer;
+      font-size: 13px;
+      color: #4F5E5B;
+      user-select: none;
+    }
+
+    .check-input { display: none; }
+
+    .check-box {
+      width: 17px;
+      height: 17px;
+      border-radius: 5px;
+      border: 1.5px solid rgba(14,22,20,.20);
+      background: #F3F6F5;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s, border-color .15s;
+    }
+
+    .check-box::after {
+      content: '';
+      width: 5px;
+      height: 9px;
+      border-right: 2px solid #fff;
+      border-bottom: 2px solid #fff;
+      transform: rotate(42deg) translateY(-1px);
+      opacity: 0;
+      transition: opacity .12s;
+    }
+
+    .check-input:checked ~ .check-box {
+      background: #1E8A75;
+      border-color: #1E8A75;
+    }
+    .check-input:checked ~ .check-box::after { opacity: 1; }
+
+    /* Sign In button */
+    .btn-signin {
+      width: 100%;
+      height: 48px;
+      background: #1E8A75;
+      color: #FFFFFF;
+      border: none;
+      border-radius: 11px;
+      font-family: var(--display);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      letter-spacing: .2px;
+      transition: background .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 4px 20px rgba(30,138,117,.28);
+    }
+
+    .btn-signin:hover {
+      background: #197A67;
+      transform: translateY(-1px);
+      box-shadow: 0 7px 28px rgba(30,138,117,.36);
+    }
+    .btn-signin:active  { transform: translateY(0); box-shadow: 0 3px 14px rgba(30,138,117,.22); }
+    .btn-signin:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+    .btn-signin-icon { font-size: 16px; transition: transform .2s; }
+    .btn-signin:hover .btn-signin-icon { transform: translateX(3px); }
+
+    /* Divider */
+    .form-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #9BADA9;
+      font-size: 11px;
+      font-family: var(--mono);
+      letter-spacing: .04em;
+    }
+    .form-divider::before,
+    .form-divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: rgba(14,22,20,.09);
+    }
+
+    /* Footer */
+    .form-footer {
+      text-align: center;
+      font-size: 12.5px;
+      color: #9BADA9;
+    }
+    .form-footer a { color: #1E8A75; margin-left: 4px; }
+    .form-footer a:hover { text-decoration: underline; }
+
+    /* ── Responsive ─────────────────────────── */
+    @media (max-width: 768px) {
+      html, body { overflow: auto; }
+      .login-wrap { flex-direction: column; height: auto; min-height: 100vh; }
+      .brand-panel {
+        flex: none;
+        padding: 36px 28px 32px;
+        justify-content: flex-start;
+        gap: 28px;
+      }
+      .form-panel {
+        flex: none;
+        padding: 36px 24px 48px;
+        box-shadow: none;
+        border-top: 1px solid rgba(14,22,20,.07);
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div class="login-wrap">
+
+  <!-- ═══════════════════════════════════════
+       LEFT · Brand panel
+  ═══════════════════════════════════════ -->
+  <div class="brand-panel">
+    <div class="brand-deco"></div>
+
+    <!-- Logo -->
+    <div class="brand-logo">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <svg width="152" height="80" viewBox="0 0 110 58" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="evinra" style="color:#fff;display:block">
+          <path d="M24.8425 22.8257C25.9489 24.8791 26.426 27.1357 26.2848 29.3577C26.076 32.6749 24.4963 35.9184 21.597 38.301C19.8187 39.7632 17.69 40.7596 15.4223 41.2435C13.1599 41.7273 10.7711 41.6964 8.4724 41.1042C8.87752 38.4025 12.7338 37.7716 12.7338 37.7716C13.3277 37.7452 13.9157 37.6706 14.4907 37.5464C16.0795 37.2074 17.5829 36.4992 18.8538 35.4543C20.9023 33.7695 22.017 31.4779 22.1655 29.1369C22.2339 28.0585 22.0956 26.9681 21.7495 25.9208C22.2349 25.4977 22.7265 25.0527 23.2241 24.5824C23.8172 24.0215 24.3583 23.4325 24.8406 22.8241L24.8425 22.8257Z" fill="#0ACBA5"/>
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M5.98204 47.4616C6.24166 33.3818 13.2308 32.8331 21.7984 24.728C26.1109 20.6484 27.6519 15.088 24.767 11.5118C26.4839 14.5804 22.1565 19.8415 18.3838 22.9447C7.30441 32.0543 1.98609 33.4669 5.98204 47.4616Z" fill="#ED2F59"/>
+          <path fill-rule="evenodd" clip-rule="evenodd" d="M2.12746 42.5315C2.31771 32.2111 6.00565 29.7093 11.6972 25.3323C15.346 22.5263 21.4991 19.3876 21.9547 14.3387C20.5133 19.0283 12.2552 20.7438 6.58902 25.2818C6.4558 24.5804 6.41262 23.8705 6.45641 23.1639C6.60477 20.8213 7.71947 18.5296 9.76804 16.8465C11.0373 15.8033 12.5424 15.0951 14.1312 14.7544C14.7062 14.6319 15.296 14.5555 15.888 14.5292C15.888 14.5292 19.7443 13.8983 20.1495 11.1966C17.8508 10.6043 15.4619 10.5735 13.1996 11.0573C10.9336 11.5411 8.80323 12.5393 7.02487 13.9998C4.12552 16.3824 2.54591 19.6259 2.33702 22.943C2.21535 24.8787 2.5596 26.8381 3.38082 28.667C1.20198 31.8586 0.314037 36.191 2.12558 42.5299L2.12746 42.5315Z" fill="#0ACBA5"/>
+          <path d="M46.7132 26.2524C46.1416 24.1097 44.4551 22.8724 42.2256 22.8724C39.996 22.8724 38.3096 24.1097 37.7379 26.2524H46.7132ZM37.595 29.1193C37.9952 31.6543 39.796 33.1331 42.2256 33.1331C43.8263 33.1331 45.1697 32.4993 45.9986 31.3224H49.2286C48.1424 34.2195 45.5985 36 42.2256 36C37.7093 36 34.6509 32.7709 34.6509 28.0027C34.6509 23.2346 37.7093 20.0055 42.2256 20.0055C46.7418 20.0055 49.8003 23.2346 49.8003 28.0027C49.8003 28.3951 49.7717 28.7572 49.7431 29.1193H37.595Z" fill="currentColor"/>
+          <path d="M55.2609 35.5473L49.5156 20.4582H52.6026L56.9759 32.0768L61.2635 20.4582H64.3505L58.6052 35.5473H55.2609Z" fill="currentColor"/>
+          <path d="M65.2525 15.7805C65.2525 14.7243 65.9671 14 66.9961 14C68.0251 14 68.7397 14.7243 68.7397 15.7805C68.7397 16.8669 68.0251 17.6214 66.9961 17.6214C65.9671 17.6214 65.2525 16.8669 65.2525 15.7805ZM65.4811 35.5473V20.4582H68.4824V35.5473H65.4811Z" fill="currentColor"/>
+          <path d="M73.6152 28.0027V35.5473H70.6139V20.4582H73.6152V22.299C74.6728 20.9108 76.2449 20.0055 78.4173 20.0055C82.3333 20.0055 84.7629 22.9931 84.7629 27.0069V35.5473H81.7616V26.9465C81.7616 24.4719 80.5611 22.8724 78.1601 22.8724C75.5304 22.8724 73.6152 24.7737 73.6152 28.0027Z" fill="currentColor"/>
+          <path d="M89.7528 35.5473H86.7515V20.4582H89.7528V21.5748C90.9533 20.1564 92.6969 19.6132 94.9264 20.2167L94.4119 22.9328C91.1534 22.3594 89.7528 24.3512 89.7528 28.0027V35.5473Z" fill="currentColor"/>
+          <path d="M106.65 35.5473V33.8573C105.563 35.155 103.934 36 101.733 36C97.417 36 94.3586 32.7709 94.3586 28.0027C94.3586 23.2346 97.417 20.0055 101.733 20.0055C103.934 20.0055 105.563 20.8505 106.65 22.1481V20.4582H109.651V35.5473H106.65ZM97.2169 28.0027C97.2169 31.2318 99.1606 33.1331 101.933 33.1331C104.734 33.1331 106.65 31.2318 106.65 28.0027C106.65 24.7737 104.734 22.8724 101.933 22.8724C99.1606 22.8724 97.2169 24.7737 97.2169 28.0027Z" fill="currentColor"/>
+        </svg>
+        <span class="brand-tagline">Box Office</span>
+      </div>
+    </div>
+
+    <!-- Hero copy -->
+    <div class="brand-hero">
+      <div class="brand-badge">
+        <span class="brand-badge-dot"></span>
+        Welcome Back
+      </div>
+      <h1 class="brand-headline">
+        Walk-up sales at <span class="accent">the door</span>
+      </h1>
+      <p class="brand-desc">
+        Evinra Box Office is a standalone point-of-sale system for
+        walk-up ticket sales — powered by Square Terminal for fast,
+        reliable in-person payments.
+      </p>
+    </div>
+
+    <!-- Features -->
+    <div class="brand-features">
+      <div class="brand-feat">
+        <div class="feat-icon"><i class="ti ti-device-tablet"></i></div>
+        <span>Square Terminal integration for card &amp; contactless</span>
+      </div>
+      <div class="brand-feat">
+        <div class="feat-icon"><i class="ti ti-ticket"></i></div>
+        <span>Sell tickets, add-ons and credit packages on the spot</span>
+      </div>
+      <div class="brand-feat">
+        <div class="feat-icon"><i class="ti ti-qrcode"></i></div>
+        <span>QR ticket delivery and instant order confirmation</span>
+      </div>
+    </div>
+
+    <span class="brand-copyright">© 2025 Evinra · All rights reserved</span>
+  </div>
+
+  <!-- ═══════════════════════════════════════
+       RIGHT · Form panel
+  ═══════════════════════════════════════ -->
+  <div class="form-panel">
+    <div class="form-card">
+
+      <!-- Header -->
+      <div class="form-header">
+        <span class="form-eyebrow">Evinra Box Office</span>
+        <h2 class="form-title">Sign in to your account</h2>
+        <p class="form-sub">Enter your credentials to continue</p>
+      </div>
+
+      <!-- Form -->
+      <form class="fields" onsubmit="handleSignIn(event)" novalidate>
+
+        <!-- Email -->
+        <div class="field-group">
+          <label class="field-label" for="email">Email address</label>
+          <div class="field-wrap">
+            <i class="ti ti-mail field-icon"></i>
+            <input
+              class="field-input"
+              id="email"
+              type="email"
+              placeholder="you@organization.com"
+              autocomplete="email"
+              required>
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="field-group">
+          <div class="field-row">
+            <label class="field-label" for="password">Password</label>
+            <a href="#" class="forgot-link">Forgot password?</a>
+          </div>
+          <div class="field-wrap">
+            <i class="ti ti-lock field-icon"></i>
+            <input
+              class="field-input"
+              id="password"
+              type="password"
+              placeholder="••••••••••"
+              autocomplete="current-password"
+              required>
+            <button type="button" class="field-eye" onclick="togglePwd()" aria-label="Show / hide password">
+              <i class="ti ti-eye" id="eyeIcon"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Remember -->
+        <div class="field-remember">
+          <label class="check-label">
+            <input type="checkbox" class="check-input" id="remember">
+            <span class="check-box"></span>
+            Keep me signed in for 30 days
+          </label>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-signin" id="signinBtn">
+          <span class="btn-signin-text">Sign In</span>
+          <i class="ti ti-arrow-right btn-signin-icon"></i>
+        </button>
+
+      </form>
+
+      <!-- Divider -->
+      <div class="form-divider">Need access?</div>
+
+      <!-- Footer -->
+      <div class="form-footer">
+        Contact your system administrator
+        <a href="mailto:admin@evinra.com">admin@evinra.com</a>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- /login-wrap -->
+
+<script>
+(function(){
+  /* ── Password toggle ── */
+  function togglePwd(){
+    var inp = document.getElementById('password');
+    var ico = document.getElementById('eyeIcon');
+    var show = inp.type === 'password';
+    inp.type = show ? 'text' : 'password';
+    ico.className = show ? 'ti ti-eye-off' : 'ti ti-eye';
+  }
+  window.togglePwd = togglePwd;
+
+  /* ── Sign in ── */
+  function handleSignIn(e){
+    e.preventDefault();
+    var btn  = document.getElementById('signinBtn');
+    var txt  = btn.querySelector('.btn-signin-text');
+    var ico  = btn.querySelector('.btn-signin-icon');
+
+    btn.disabled = true;
+    txt.textContent = 'Signing in…';
+    ico.className = 'ti ti-loader-2 btn-signin-icon';
+    ico.style.animation = 'spin .8s linear infinite';
+
+    if(!document.getElementById('_spin')){
+      var s = document.createElement('style');
+      s.id = '_spin';
+      s.textContent = '@keyframes spin{to{transform:rotate(360deg)}}';
+      document.head.appendChild(s);
+    }
+
+    setTimeout(function(){
+      window.location.href = 'index.html';
+    }, 1400);
+  }
+  window.handleSignIn = handleSignIn;
+})();
+</script>
+
+</body>
+</html>

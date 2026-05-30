@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" shape-rendering="geometricPrecision">
+  <defs>
+    <clipPath id="c">
+      <!-- Inner edge of the ring — content clips here so ring sits cleanly on top -->
+      <circle cx="32" cy="32" r="26"/>
+    </clipPath>
+  </defs>
+
+  <!-- White background -->
+  <circle cx="32" cy="32" r="32" fill="#ffffff"/>
+
+  <!-- Three wavy globe parallels (latitude lines) -->
+  <g clip-path="url(#c)" fill="none" stroke="#364B6E" stroke-width="2.5" stroke-linecap="round">
+    <path d="M3 24 Q17 20 32 23 Q47 26 61 22"/>
+    <path d="M3 32 Q17 28 32 31 Q47 34 61 30"/>
+    <path d="M3 40 Q17 36 32 39 Q47 42 61 38"/>
+  </g>
+
+  <!-- Teal diagonal ribbon -->
+  <g clip-path="url(#c)">
+    <path d="M3 30 Q18 24 32 26 Q48 28 61 21
+             L61 31 Q48 38 32 36 Q18 34 3 40Z"
+          fill="#2CAF91"/>
+  </g>
+
+  <!-- Outer navy ring — drawn last so it sits on top of lines and ribbon edges -->
+  <circle cx="32" cy="32" r="29" fill="none" stroke="#364B6E" stroke-width="6"/>
+</svg>
