@@ -4367,12 +4367,20 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
       'Riders of the Storm':      { venue: 'Thunder Dome',     city: 'Dallas',    state: 'TX' },
     };
     const PALETTE = [['var(--p)', 'var(--p-dim)'], ['var(--blue)', 'var(--blue-dim)'], ['var(--amber)', 'var(--amber-dim)'], ['var(--red)', 'var(--red-dim)']];
-    const showById = {}; rawShows.forEach(s => { showById[s.id] = s; });
+    // Scope the catalogue to the signed-in company (tenant): only its productions/shows.
+    let scopedProds = rawProds, scopedShows = rawShows;
+    var _boTid = null; try { var _s = JSON.parse(localStorage.getItem('evinra-bo-session') || 'null'); _boTid = _s && _s.tenantId; } catch(e){}
+    if (_boTid) {
+      scopedProds = rawProds.filter(p => String(p.tenant_id) === String(_boTid));
+      const _pIds = {}; scopedProds.forEach(p => { _pIds[p.id] = 1; });
+      scopedShows = rawShows.filter(s => _pIds[s.production_id]);
+    }
+    const showById = {}; scopedShows.forEach(s => { showById[s.id] = s; });
     const cleanName = n => String(n || '').replace(/\s*·\s*\d{4}-\d{2}\s*$/, '').trim();
-    // Group dated events by their parent DB show_id (skip undated / show-less rows).
+    // Group dated events by their parent DB show_id (only this tenant's shows).
     const groups = {};
     rawEvents.forEach(e => {
-      if (!e.show_id || !e.start_at) return;
+      if (!e.show_id || !e.start_at || !showById[e.show_id]) return;
       (groups[e.show_id] = groups[e.show_id] || []).push(e);
     });
     let idx = 0;
@@ -4393,7 +4401,7 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
       return { shows: _DEMO_SHOWS, productions: _DEMO_PRODUCTIONS };
     }
     console.log('Box Office: catalogue source=shared-db (' + dbShows.length + ' shows)');
-    return { shows: dbShows, productions: rawProds.map(p => ({ id: p.id, name: p.name })) };
+    return { shows: dbShows, productions: scopedProds.map(p => ({ id: p.id, name: p.name })) };
   }
   const _CATALOGUE = loadBoxOfficeCatalogue();
   let shows       = _CATALOGUE.shows;
@@ -10198,9 +10206,8 @@ function loginSelectEvent(showId, eventId) {
 }
 
 function doLoginFinish() {
-  if (!loginPendingUser) return;
-  currentUser      = loginPendingUser;
-  loginPendingUser = null;
+  if (loginPendingUser) { currentUser = loginPendingUser; loginPendingUser = null; }
+  if (!currentUser) return; // already signed in via login.html, just need an event
   document.getElementById('loginOverlay').style.display = 'none';
   applyRoleRestrictions();
   updateHeaderUser();
@@ -10213,13 +10220,10 @@ function doLoginFinish() {
 }
 
 function loginBack() {
-  loginPendingUser = null;
-  loginSelShowId   = null;
-  loginSelEventId  = null;
-  document.getElementById('loginStep2').style.display = 'none';
-  document.getElementById('loginStep1').style.display = '';
-  document.getElementById('loginError').style.display = 'none';
-  setTimeout(function(){ document.getElementById('loginUsername').focus(); }, 50);
+  // Step 1 (credentials) now lives on login.html — go back there.
+  boClearSession();
+  currentUser = null;
+  location.replace('login.html');
 }
 
 /* ── Login persistence: "Remember me" + 5-minute session ──────────────────
@@ -10242,7 +10246,14 @@ function boSaveSession() {
   if (!currentUser) return;
   boLastFlush = Date.now();
   boStoreSet(BO_SESSION_KEY, JSON.stringify({
-    username: currentUser.username,
+    userId:   currentUser.userId || currentUser.id || null,
+    name:     currentUser.name,
+    email:    currentUser.email || currentUser.username,
+    role:     currentUser.role,
+    initials: currentUser.initials,
+    staffKey: currentUser.staffKey,
+    tenantId: currentUser.tenantId || null,
+    tenantName: currentUser.tenantName || '',
     showId:   loginSelShowId  || (ltActiveSession ? ltActiveSession.showId  : null),
     eventId:  loginSelEventId || (ltActiveSession ? ltActiveSession.eventId : null),
     ts: Date.now()
@@ -10262,26 +10273,35 @@ function boTryRestoreSession() {
   var raw = boStoreGet(BO_SESSION_KEY);
   if (!raw) return false;
   var data; try { data = JSON.parse(raw); } catch(e){ boClearSession(); return false; }
-  if (!data || !data.username || !data.ts) { boClearSession(); return false; }
+  if (!data || !(data.email || data.userId) || !data.ts) { boClearSession(); return false; }
   if (Date.now() - data.ts > BO_SESSION_TTL_MS) { boClearSession(); return false; }
 
-  var user = null;
-  for (var i = 0; i < USERS.length; i++) { if (USERS[i].username === data.username) { user = USERS[i]; break; } }
-  if (!user) { boClearSession(); return false; }
-
-  currentUser      = user;
+  // Rebuild currentUser from the DB-backed session (role already mapped to a ROLES key).
+  currentUser = {
+    userId: data.userId, username: data.email, name: data.name, email: data.email,
+    role: ROLES[data.role] ? data.role : 'box_office_user',
+    initials: data.initials || ((data.name||'?')[0]||'').toUpperCase(),
+    staffKey: data.staffKey || (data.initials||'').toLowerCase(),
+    tenantId: data.tenantId || null, tenantName: data.tenantName || ''
+  };
   loginPendingUser = null;
   loginSelShowId   = data.showId  || null;
   loginSelEventId  = data.eventId || null;
 
-  var ov = document.getElementById('loginOverlay');
-  if (ov) ov.style.display = 'none';
-  document.getElementById('loginStep1').style.display = '';
-  document.getElementById('loginStep2').style.display = 'none';
-
   applyRoleRestrictions();
   updateHeaderUser();
-  if (loginSelShowId && loginSelEventId) { ltSelectSession(loginSelShowId, loginSelEventId); }
+
+  var ov = document.getElementById('loginOverlay');
+  if (loginSelShowId && loginSelEventId) {
+    if (ov) ov.style.display = 'none';
+    ltSelectSession(loginSelShowId, loginSelEventId);
+  } else {
+    // Signed in (from login.html) but no event chosen yet → show step-2 picker.
+    if (ov) ov.style.display = '';
+    document.getElementById('loginStep1').style.display = 'none';
+    document.getElementById('loginStep2').style.display = '';
+    renderLoginEventPicker();
+  }
   boSaveSession();   // slide the window forward
   return true;
 }
@@ -10289,8 +10309,8 @@ function boTryRestoreSession() {
 function boExpireSession() {
   if (!currentUser) return;
   boClearSession();
-  performLogoutReset();
-  showToast('Session expired after 5 minutes of inactivity. Please sign in again.', true);
+  currentUser = null;
+  location.replace('login.html');
 }
 
 function boStartSessionWatch() {
@@ -10325,8 +10345,8 @@ function boApplyRememberToForm() {
 
 function boInitLogin() {
   boStartSessionWatch();
-  if (boTryRestoreSession()) return;   // recent session → skip login
-  boApplyRememberToForm();             // otherwise prefill remembered username
+  if (boTryRestoreSession()) return;          // recent session → restore shift
+  location.replace('login.html');             // no valid session → go to login page
 }
 
 // Shared reset used by manual sign-out and automatic expiry
@@ -10351,7 +10371,8 @@ function performLogoutReset() {
 function logout() {
   if (!confirm('Sign out of Onsite Sales?')) return;
   boClearSession();
-  performLogoutReset();
+  currentUser = null;
+  location.replace('login.html');
 }
 
 function resetRoleUI() {
