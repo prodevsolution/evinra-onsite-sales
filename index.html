@@ -4284,7 +4284,8 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
   }
 
   // --- SHOW & EVENT CATALOGUE ---
-  const shows = [
+  // Demo fallback (used when the shared DB on :4000 is unreachable).
+  const _DEMO_SHOWS = [
     {
       id: 'flying-lions', name: 'Flying Lions Circus 2026', venue: 'Grand Arena',
       city: 'Las Vegas', state: 'NV',
@@ -4332,11 +4333,71 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
     }
   ];
 
-  // Productions catalogue (groups shows)
-  const productions = [
+  // Productions catalogue (groups shows) — demo fallback.
+  const _DEMO_PRODUCTIONS = [
     { id: 'premiere-arts', name: 'Premiere Arts 2026' },
     { id: 'open-air-fest', name: 'Open Air Fest'      }
   ];
+
+  // --- Catalogue loader: pull shows + productions from the shared DB (:4000), fallback to demo ---
+  function loadBoxOfficeCatalogue() {
+    const BASE = (window.EvinraDB && EvinraDB.SERVICE ? EvinraDB.SERVICE : 'http://localhost:4000') + '/api/db';
+    function xhrGet(url) {
+      try {
+        const x = new XMLHttpRequest();
+        x.open('GET', url, false); // synchronous so the catalogue is ready before first render
+        x.send(null);
+        if (x.status >= 200 && x.status < 300) return JSON.parse(x.responseText);
+      } catch (e) { /* network error */ }
+      return null;
+    }
+    const rawEvents = xhrGet(BASE + '/events');
+    const rawShows  = xhrGet(BASE + '/shows');
+    const rawProds  = xhrGet(BASE + '/productions');
+    if (!Array.isArray(rawEvents) || !Array.isArray(rawShows) || !Array.isArray(rawProds)) {
+      console.log('Box Office: catalogue source=demo');
+      return { shows: _DEMO_SHOWS, productions: _DEMO_PRODUCTIONS };
+    }
+    // The DB events carry no venue/colour, so map those by clean show name.
+    const VENUES = {
+      'Flying Lions Circus 2026': { venue: 'Grand Arena',      city: 'Las Vegas', state: 'NV' },
+      'Nova Spectacular':         { venue: 'City Theater',     city: 'Miami',     state: 'FL' },
+      'SunPeak Summer Festival':  { venue: 'Outdoor Pavilion', city: 'Austin',    state: 'TX' },
+      'Cirque Aurora':            { venue: 'Civic Hall',       city: 'Orlando',   state: 'FL' },
+      'Riders of the Storm':      { venue: 'Thunder Dome',     city: 'Dallas',    state: 'TX' },
+    };
+    const PALETTE = [['var(--p)', 'var(--p-dim)'], ['var(--blue)', 'var(--blue-dim)'], ['var(--amber)', 'var(--amber-dim)'], ['var(--red)', 'var(--red-dim)']];
+    const showById = {}; rawShows.forEach(s => { showById[s.id] = s; });
+    const cleanName = n => String(n || '').replace(/\s*·\s*\d{4}-\d{2}\s*$/, '').trim();
+    // Group dated events by their parent DB show_id (skip undated / show-less rows).
+    const groups = {};
+    rawEvents.forEach(e => {
+      if (!e.show_id || !e.start_at) return;
+      (groups[e.show_id] = groups[e.show_id] || []).push(e);
+    });
+    let idx = 0;
+    const dbShows = Object.keys(groups).map(showId => {
+      const evs    = groups[showId].slice().sort((a, b) => String(a.start_at).localeCompare(String(b.start_at)));
+      const name   = cleanName(evs[0].name) || (showById[showId] && cleanName(showById[showId].name)) || 'Show';
+      const prodId = showById[showId] ? showById[showId].production_id : '';
+      const v      = VENUES[name] || { venue: 'Main Venue', city: '', state: '' };
+      const pal    = PALETTE[idx++ % PALETTE.length];
+      return {
+        id: showId, name: name, venue: v.venue, city: v.city, state: v.state,
+        productionId: prodId, color: pal[0], dim: pal[1],
+        events: evs.map(e => ({ id: String(e.id), date: new Date(String(e.start_at).replace(' ', 'T')) })),
+      };
+    });
+    if (!dbShows.length) {
+      console.log('Box Office: catalogue source=demo (no dated events in DB)');
+      return { shows: _DEMO_SHOWS, productions: _DEMO_PRODUCTIONS };
+    }
+    console.log('Box Office: catalogue source=shared-db (' + dbShows.length + ' shows)');
+    return { shows: dbShows, productions: rawProds.map(p => ({ id: p.id, name: p.name })) };
+  }
+  const _CATALOGUE = loadBoxOfficeCatalogue();
+  let shows       = _CATALOGUE.shows;
+  let productions = _CATALOGUE.productions;
 
   // Session picker wizard state
   var sessPickerState = { step: 0, productionId: null, showId: null };
@@ -4996,6 +5057,31 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
     // Add to order table and show ticket
     addOrderToTable(orderData);
     showTicketModal(orderData);
+    // Persist the order to the shared DB (:4000) so it shows up in the admin / reports.
+    if (window.EvinraDB && typeof EvinraDB.saveOrder === 'function') {
+      EvinraDB.saveOrder({
+        orderNum:   orderNum,
+        channel:    'box_office',
+        show:       show,
+        eventLabel: eventLabel,
+        custName:   custName || 'Walk-in',
+        custEmail:  custEmail,
+        custPhone:  custPhone,
+        payment:    payment,
+        last4:      last4,
+        tickets:    activeTickets.map(t => ({ name: t.name, qty: t.qty, price: t.price })),
+        addons:     activeAddons.map(a => ({ name: a.name, qty: a.qty, price: a.price, category: a.category })),
+        creditPkgs: activeCreditPkgs.map(p => ({ name: p.name, qty: p.qty, price: p.price })),
+        subtotal:   Number(subtotal.toFixed(2)),
+        discount:   Number(disc.toFixed(2)),
+        fee:        Number(fee.toFixed(2)),
+        total:      Number(total.toFixed(2)),
+        status:     'completed',
+        date:       new Date().toISOString(),
+      })
+        .then(() => console.log('Box Office: order saved to shared-db', orderNum))
+        .catch(err => console.warn('Box Office: saveOrder failed (order shown locally only)', err));
+    }
   }
 
   // --- TICKET MODAL ---
