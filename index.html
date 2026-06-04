@@ -5016,6 +5016,40 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
     return true;
   }
 
+  // Capture the buyer into the tenant's customers collection for marketing.
+  // Upsert by (tenant_id, email): create if new, backfill empty fields otherwise.
+  function boTenantId(){ try{ var s=JSON.parse(localStorage.getItem('evinra-bo-session')||'null'); return (s&&s.tenantId)||''; }catch(e){ return ''; } }
+  function boUpsertCustomer(fullName, email, phone, address, city, state){
+    try{
+      email = String(email||'').trim().toLowerCase();
+      var tn = boTenantId();
+      if(!tn || !email || email.indexOf('@')<0) return;
+      var base = (window.EvinraDB && EvinraDB.SERVICE ? EvinraDB.SERVICE : 'http://localhost:4000') + '/api/db';
+      var parts = String(fullName||'').trim().split(/\s+/);
+      var first = parts.shift() || '';
+      var last  = parts.join(' ');
+      fetch(base+'/customers?tenant_id=eq.'+encodeURIComponent(tn)+'&email=eq.'+encodeURIComponent(email))
+        .then(function(r){ return r.json(); })
+        .then(function(rows){
+          var ex = Array.isArray(rows) ? rows[0] : null;
+          if(ex){
+            var patch = {};
+            if(!ex.first && first)     patch.first = first;
+            if(!ex.last && last)       patch.last = last;
+            if(!ex.phone && phone)     patch.phone = phone;
+            if(!ex.address && address) patch.address = address;
+            if(!ex.city && city)       patch.city = city;
+            if(!ex.state && state)     patch.state = state;
+            if(Object.keys(patch).length)
+              fetch(base+'/customers?_id=eq.'+encodeURIComponent(ex.id||ex._id),{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)}).catch(function(){});
+          } else {
+            fetch(base+'/customers',{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({tenant_id:tn, first:first, last:last, email:email, phone:phone||'', address:address||'', city:city||'', state:state||''})}).catch(function(){});
+          }
+        }).catch(function(){});
+    }catch(e){}
+  }
+
   // --- COMPLETE SALE ---
   function completeSale() {
     // Final validation across all steps
@@ -5090,6 +5124,8 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
         .then(() => console.log('Box Office: order saved to shared-db', orderNum))
         .catch(err => console.warn('Box Office: saveOrder failed (order shown locally only)', err));
     }
+    // Capture buyer for marketing (name/email/phone from this flow).
+    boUpsertCustomer(custName, custEmail, custPhone, '', '', '');
   }
 
   // --- TICKET MODAL ---
@@ -8367,6 +8403,14 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
       staffName: nsfStaffName, staffInitials: nsfStaffInitials, staffKey: nsfStaffKey
     };
     nsfSavedOrder = orderData;
+
+    // Capture buyer for marketing, including address/city/state when provided.
+    boUpsertCustomer(
+      custName, custEmail, custPhone,
+      (document.getElementById('nsfAddress')||{}).value || '',
+      (document.getElementById('nsfCity')||{}).value || '',
+      (document.getElementById('nsfState')||{}).value || ''
+    );
 
     nsfRenderConfirm(orderData);
     nsfGoTo(6, false);
