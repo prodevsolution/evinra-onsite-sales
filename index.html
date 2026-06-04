@@ -8404,6 +8404,32 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
     };
     nsfSavedOrder = orderData;
 
+    // Persist the order to the shared DB (:4000/Railway) so it shows in admin/reports.
+    if (window.EvinraDB && typeof EvinraDB.saveOrder === 'function') {
+      EvinraDB.saveOrder({
+        orderNum:   orderNum,
+        channel:    'box_office',
+        show:       showName,
+        eventLabel: evLabel,
+        custName:   custName || 'Walk-in',
+        custEmail:  custEmail,
+        custPhone:  custPhone,
+        payment:    payment,
+        last4:      last4,
+        tickets:    activeTickets.map(function(t){ return { name: t.name, qty: t.qty, price: t.price }; }),
+        addons:     activeAddons.map(function(a){ return { name: a.name, qty: a.qty, price: a.price, category: a.category }; }),
+        creditPkgs: activeCreditPkgs.map(function(p){ return { name: p.name, qty: p.qty, price: p.price }; }),
+        subtotal:   Number(t.sub.toFixed(2)),
+        discount:   Number(t.disc.toFixed(2)),
+        fee:        Number(t.fee.toFixed(2)),
+        total:      Number(t.total.toFixed(2)),
+        status:     'completed',
+        date:       new Date().toISOString(),
+      })
+        .then(function(){ console.log('Box Office (nsf): order saved to shared-db', orderNum); })
+        .catch(function(err){ console.warn('Box Office (nsf): saveOrder failed (order shown locally only)', err); });
+    }
+
     // Capture buyer for marketing, including address/city/state when provided.
     boUpsertCustomer(
       custName, custEmail, custPhone,
