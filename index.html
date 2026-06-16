@@ -2007,6 +2007,14 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
   .bo-term-select:disabled{opacity:.5;cursor:wait;}
   .bo-term-any{font-size:11.5px;font-family:var(--mono);color:var(--text3);font-style:italic;}
   .bo-users-hint{margin-top:12px;font-size:11px;font-family:var(--mono);color:var(--text3);line-height:1.5;}
+  /* Payment device status pills (Payment Terminals view) */
+  .dev-term-ic{width:30px;height:30px;border-radius:8px;background:var(--p-dim);color:var(--p);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .dev-pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;font-size:10.5px;font-weight:600;font-family:var(--mono);white-space:nowrap;}
+  .dev-pill-ok{background:color-mix(in srgb,var(--p) 13%,transparent);color:var(--p);}
+  .dev-pill-pos{background:var(--amber-dim,rgba(224,163,97,.15));color:var(--amber,#c27803);}
+  .dev-pill-none{background:var(--bg3);color:var(--text3);border:1px solid var(--border);}
+  .dev-pill-gw{background:var(--bg3);color:var(--text2);border:1px solid var(--border);margin-left:4px;}
+  .dev-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
   /* Session switcher dropdown */
   .sess-switcher{position:fixed;z-index:1500;background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:14px 14px 12px;width:298px;box-shadow:var(--shadow-lg);}
   .sess-sw-hdr{font-size:9px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px;}
@@ -2652,26 +2660,23 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
     </div><!-- /usersView -->
 
     <div id="devicesView" style="display:none">
-      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-        <div>
-          <div class="page-title">Devices</div>
-          <div class="page-sub">Terminal API &amp; Square POS assignments per show</div>
-        </div>
-        <button class="btn btn-md btn-ghost" onclick="closeSettingsModal()" style="flex-shrink:0;margin-top:4px">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          Back
-        </button>
+      <div class="page-header">
+        <div class="page-title">Payment Terminals</div>
+        <div class="page-sub">Assign the payment device (gateway) used at each box office Terminal</div>
       </div>
       <div class="card">
         <div class="card-header" style="justify-content:space-between">
           <div style="display:flex;align-items:center;gap:10px">
             <span class="ev-icon" style="color:var(--p)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
-            <span class="card-title">Device Assignments</span>
+            <span class="card-title">Terminals &amp; devices</span>
           </div>
-          <button class="btn btn-md btn-primary" onclick="saveSettings()">Save Settings</button>
+          <button class="btn btn-md btn-ghost" id="devRefreshBtn" onclick="loadDevicesView()" aria-label="Refresh">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
         </div>
         <div id="devicesTableWrap" style="padding:16px">
-          <div style="padding:32px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">Click to open Devices view to load assignments.</div>
+          <div style="padding:32px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">Loading terminals…</div>
         </div>
       </div>
     </div><!-- /devicesView -->
@@ -5560,7 +5565,13 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
         if (status === 'PAIRED') {
           document.getElementById('pairStatus').textContent = '✓ Device paired!';
           clearTimeout(sqPairPollTimer);
-          setTimeout(() => { sqLoadDevices(); sqClosePairModal(); }, 1500);
+          setTimeout(() => {
+            sqLoadDevices();
+            // If the Payment Terminals view is open, refresh its device options too.
+            var dv = document.getElementById('devicesView');
+            if (dv && dv.style.display !== 'none') loadDevicesView();
+            sqClosePairModal();
+          }, 1500);
         } else if (status === 'EXPIRED') {
           document.getElementById('pairStatus').textContent = 'Code expired — please try again.';
         } else {
@@ -5629,142 +5640,149 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
     if (view === 'users') {
       loadUsersView();
     }
+    if (view === 'devices') {
+      loadDevicesView();
+    }
   }
 
-  async function openSettingsModal() {
+  function openSettingsModal() {
     var r = currentUser ? ROLES[currentUser.role] : null;
     if (!r || !r.canDevices) { showToast('You do not have access to Devices.', true); return; }
-    showView('devices');
-    await loadDevicesView();
+    showView('devices');   // showView loads the Payment Terminals view
   }
+
+  // Box Office payment devices = the SAME registered devices as the Ticket System
+  // "Device by Locations" (devices collection). A device is assigned to a Terminal by
+  // setting device.sale_location = the Terminal's name (exactly like General). Read/write
+  // the real `devices` collection — no separate per-location field.
+  let BO_DEVICES = [];
+
+  async function boLoadDevices() {
+    BO_DEVICES = [];
+    const tid = currentUser && currentUser.tenantId;
+    const db = boDb();
+    if (!db || !tid) return;
+    try {
+      const res = await db.from('devices').select().eq('tenant_id', tid);
+      BO_DEVICES = (res.data || []).filter(d => d.active !== false && d.active !== 0);
+    } catch (e) { /* leave empty — UI shows guidance */ }
+  }
+  function boDeviceId(d) { return String(d.id || d._id); }
+  function boDeviceById(id) { return BO_DEVICES.find(d => boDeviceId(d) === String(id)); }
+  function boDevicesForTerminal(name) { return BO_DEVICES.filter(d => (d.sale_location || '') === name); }
+  function gwName(g) { return String(g || '').split(' — ')[0]; }
 
   async function loadDevicesView() {
     document.getElementById('devicesTableWrap').innerHTML =
-      '<div style="padding:32px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">Loading devices…</div>';
-
-    const [devRes, cfgRes] = await Promise.allSettled([
-      apiFetch('/api/square/devices').then(r => r.json()),
-      apiFetch('/api/config/locations').then(r => r.json()),
-    ]);
-
-    settingsDeviceList = devRes.status === 'fulfilled' ? (devRes.value.devices || []) : [];
-    settingsLocCfg     = cfgRes.status === 'fulfilled' ? cfgRes.value : {};
-
+      '<div style="padding:32px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">Loading terminals…</div>';
+    await boLoadTerminals();
+    await boLoadDevices();
     renderDevicesTable();
   }
 
   function renderDevicesTable() {
-    const devOpts = settingsDeviceList.map(d => {
-      const name  = d.attributes?.name  || d.name  || d.id;
-      const model = d.attributes?.model ? ` (${d.attributes.model})` : '';
-      return `<option value="${d.id}">${name}${model}</option>`;
-    }).join('');
+    const wrap = document.getElementById('devicesTableWrap');
+    if (!BO_TERMINALS.length) {
+      wrap.innerHTML = `<div style="padding:42px 20px;text-align:center">
+        <div style="width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:var(--p-dim);color:var(--p)">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 22V12h6v10"/></svg>
+        </div>
+        <div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px">No Terminal locations yet</div>
+        <div style="font-size:11.5px;font-family:var(--mono);color:var(--text3);line-height:1.6;max-width:360px;margin:0 auto">Create Terminal locations in the <strong>Ticket System → General → Locations</strong> (type “Terminal”). They’ll appear here so you can assign a payment device to each.</div>
+      </div>`;
+      return;
+    }
 
-    const noDevMsg = settingsDeviceList.length === 0
-      ? `<tr><td colspan="4" style="padding:12px 16px;font-size:11px;color:var(--text3);font-family:var(--mono)">
-           No Terminal API devices found — pair a device using the + button in the payment panel, or choose Square POS.
-         </td></tr>`
-      : '';
-
-    const rows = shows.map(s => {
-      const saved  = settingsLocCfg[s.id] || '';
-      const isPOS  = saved === '__pos__';
-      const badge  = isPOS
-        ? `<span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:20px;background:var(--amber-dim,rgba(251,191,36,.15));color:var(--amber,#f59e0b)">POS</span>`
-        : saved
-          ? `<span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:20px;background:var(--p-dim);color:var(--p)">Terminal API</span>`
-          : `<span style="font-family:var(--mono);font-size:9px;padding:2px 7px;border-radius:20px;background:var(--bg3);color:var(--text3)">Not assigned</span>`;
-
+    const rows = BO_TERMINALS.map(t => {
+      const tname = t.name || 'Terminal';
+      const assigned = boDevicesForTerminal(tname);
+      const cur = assigned[0] || null;                       // one payment device per terminal
+      const curId = cur ? boDeviceId(cur) : '';
+      const badge = cur
+        ? `<span class="dev-pill dev-pill-ok"><span class="dev-dot"></span>${cur.name || cur.device_id || 'Device'}</span>${cur.gateway ? ` <span class="dev-pill dev-pill-gw">${gwName(cur.gateway)}</span>` : ''}`
+        : `<span class="dev-pill dev-pill-none">No device</span>`;
+      const serial = cur && cur.device_id ? `<div class="bo-u-email">SN ${cur.device_id}</div>` : '';
+      // Options: every active device; show its serial + gateway, and flag ones in use elsewhere.
+      const opts = BO_DEVICES.map(d => {
+        const id = boDeviceId(d);
+        const here = (d.sale_location || '') === tname;
+        const elsewhere = d.sale_location && !here ? ` · at ${d.sale_location}` : '';
+        const gw = d.gateway ? ` · ${gwName(d.gateway)}` : '';
+        return `<option value="${id}"${id === curId ? ' selected' : ''}>${d.name || d.device_id}${d.device_id ? ' — ' + d.device_id : ''}${gw}${elsewhere}</option>`;
+      }).join('');
       return `<tr>
-        <td style="padding:12px 16px;font-family:var(--mono);font-size:11px;font-weight:600;color:var(--text)">${s.name}</td>
-        <td style="padding:12px 16px;font-size:11px;color:var(--text3)">${s.venue}</td>
-        <td style="padding:12px 16px">${badge}</td>
-        <td style="padding:12px 16px">
-          <select class="settings-loc-select" data-show="${s.id}" style="width:100%;max-width:240px">
-            <option value="">— Not assigned —</option>
-            <option value="__pos__" ${isPOS ? 'selected' : ''}>Square POS (manual confirm)</option>
-            ${devOpts}
+        <td><div class="bo-u-cell"><div class="dev-term-ic"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 22V12h6v10"/></svg></div><div class="bo-u-meta"><div class="bo-u-name">${tname}</div>${serial}</div></div></td>
+        <td>${badge}</td>
+        <td>
+          <select class="bo-term-select" aria-label="Payment device for ${tname}" onchange="assignDeviceToTerminal('${encodeURIComponent(tname)}', this.value, this)">
+            <option value="">— No device —</option>
+            ${opts}
           </select>
         </td>
       </tr>`;
     }).join('');
 
-    document.getElementById('devicesTableWrap').innerHTML = `
-      <table style="width:100%;border-collapse:collapse">
-        <thead>
-          <tr style="border-bottom:1px solid var(--border)">
-            <th style="padding:8px 16px;text-align:left;font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Show</th>
-            <th style="padding:8px 16px;text-align:left;font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Venue</th>
-            <th style="padding:8px 16px;text-align:left;font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Type</th>
-            <th style="padding:8px 16px;text-align:left;font-family:var(--mono);font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.06em">Assigned Device</th>
-          </tr>
-        </thead>
-        <tbody>${rows}${noDevMsg}</tbody>
-      </table>`;
+    const hint = BO_DEVICES.length === 0
+      ? `<div class="bo-users-hint"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>No payment devices registered yet. Add them in the <strong>Ticket System → General → Devices</strong>, then assign one to each terminal here.</div>`
+      : `<div class="bo-users-hint">Same registry as <strong>General → Device by Locations</strong>. Each box office user takes payment on the device assigned to their terminal.</div>`;
 
-    // Apply saved Terminal API device selections
-    shows.forEach(s => {
-      const saved = settingsLocCfg[s.id] || '';
-      if (saved && saved !== '__pos__') {
-        const sel = document.querySelector(`.settings-loc-select[data-show="${s.id}"]`);
-        if (sel && [...sel.options].find(o => o.value === saved)) sel.value = saved;
-      }
-    });
+    wrap.innerHTML = `<table class="bo-users-table"><thead><tr><th>Terminal</th><th>Payment device</th><th>Assign device</th></tr></thead><tbody>${rows}</tbody></table>${hint}`;
   }
 
-  async function saveSettings() {
-    const selects = document.querySelectorAll('.settings-loc-select[data-show]');
-    const cfg = {};
-    selects.forEach(sel => {
-      if (sel.value) cfg[sel.dataset.show] = sel.value;
-    });
-
+  // Assign (or change/clear) the payment device for a Terminal by writing device.sale_location
+  // on the real devices collection — one device per terminal (clears any previous one).
+  async function assignDeviceToTerminal(termNameEnc, deviceId, sel) {
+    const termName = decodeURIComponent(termNameEnc);
+    if (sel) sel.disabled = true;
+    const db = boDb();
+    if (!db) { showToast('Could not reach the server', true); if (sel) sel.disabled = false; return; }
     try {
-      await apiFetch('/api/config/locations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cfg),
-      });
-      settingsLocCfg = cfg;
-      showToast('Device settings saved.');
-      renderDevicesTable(); // re-render to update badges
+      // Clear any device currently pointing at this terminal (except the newly chosen one).
+      const prev = boDevicesForTerminal(termName).filter(d => boDeviceId(d) !== String(deviceId));
+      for (const d of prev) {
+        const r = await db.from('devices').update({ sale_location: '' }).eq('_id', boDeviceId(d));
+        if (r.error) throw r.error;
+        d.sale_location = '';
+      }
+      // Assign the chosen device to this terminal.
+      if (deviceId) {
+        const r2 = await db.from('devices').update({ sale_location: termName }).eq('_id', deviceId);
+        if (r2.error) throw r2.error;
+        const dev = boDeviceById(deviceId);
+        if (dev) dev.sale_location = termName;
+        showToast('Device assigned to ' + termName);
+      } else {
+        showToast('Device cleared for ' + termName);
+      }
+      renderDevicesTable();
     } catch (e) {
-      showToast('Failed to save settings.', true);
+      showToast('Could not save device assignment', true);
+      if (sel) sel.disabled = false;
     }
   }
 
   function closeSettingsModal() { showView('box'); }
 
-  // Auto-select device for the selected show when entering payment step
-  function applyVenueDevice() {
-    if (!selectedShowId) return;
-    const deviceId = settingsLocCfg[selectedShowId];
+  // Auto-select the payment device assigned to the user's ACTIVE terminal when entering payment.
+  // The device is the one whose sale_location matches the terminal (registered devices).
+  async function applyVenueDevice() {
+    if (!currentUser || !currentUser.locationName) return;
+    if (!BO_DEVICES.length) await boLoadDevices();
+    const dev = BO_DEVICES.find(d => (d.sale_location || '') === currentUser.locationName);
+    const deviceId = dev && dev.device_id;
     if (!deviceId) return;
 
     const sel = document.getElementById('sqDeviceSelect');
     if (!sel) return;
-
-    if (deviceId === '__pos__') {
-      if (![...sel.options].find(o => o.value === '__pos__')) {
-        const opt = document.createElement('option');
-        opt.value = '__pos__'; opt.textContent = 'Square POS (manual confirm)';
-        sel.appendChild(opt);
-      }
-      sel.value    = '__pos__';
-      sel.disabled = false;
-      document.getElementById('sqDot').classList.add('online');
-      document.getElementById('sqConnLabel').textContent = 'POS';
-    } else {
-      if (![...sel.options].find(o => o.value === deviceId)) {
-        const opt = document.createElement('option');
-        opt.value = deviceId; opt.textContent = deviceId; opt.dataset.manual = '1';
-        sel.appendChild(opt);
-      }
-      sel.value    = deviceId;
-      sel.disabled = false;
-      document.getElementById('sqDot').classList.add('online');
-      document.getElementById('sqConnLabel').textContent = 'Auto';
+    if (![...sel.options].find(o => o.value === deviceId)) {
+      const opt = document.createElement('option');
+      opt.value = deviceId; opt.textContent = (dev.name ? dev.name + ' — ' : '') + deviceId; opt.dataset.manual = '1';
+      sel.appendChild(opt);
     }
+    sel.value    = deviceId;
+    sel.disabled = false;
+    document.getElementById('sqDot').classList.add('online');
+    document.getElementById('sqConnLabel').textContent = 'Auto';
   }
 
   // Load devices from Square API (or offer simulation if server unreachable)
