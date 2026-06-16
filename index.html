@@ -5518,6 +5518,14 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
         view = 'box';
       }
     }
+    // Devices is restricted to roles that may manage devices — redirect others
+    if (view === 'devices') {
+      var _rd = currentUser ? ROLES[currentUser.role] : null;
+      if (!_rd || !_rd.canDevices) {
+        showToast('Access denied — Devices is restricted to BO Supervisors.', true);
+        view = 'box';
+      }
+    }
     var bov = document.getElementById('boxOfficeView');
     var dv  = document.getElementById('devicesView');
     var wbv = document.getElementById('wristbandView');
@@ -5536,6 +5544,8 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
   }
 
   async function openSettingsModal() {
+    var r = currentUser ? ROLES[currentUser.role] : null;
+    if (!r || !r.canDevices) { showToast('You do not have access to Devices.', true); return; }
     showView('devices');
     await loadDevicesView();
   }
@@ -10158,10 +10168,10 @@ var USERS = [
 ];
 
 var ROLES = {
-  box_office_supervisor: { label:'BO Supervisor', badgeColor:'',      canNewSale:true,  canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:true,  canRefundVoid:true,  canWristbands:true,  autoFlow:null,      requireSession:false },
-  box_office_user:       { label:'BO User',       badgeColor:'',      canNewSale:true,  canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:true,  canRefundVoid:false, canWristbands:false, autoFlow:null,      requireSession:false },
-  upgrade_mobile:        { label:'Mobile',        badgeColor:'amber', canNewSale:false, canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:false, canSettings:false, canRefundVoid:false, canWristbands:false, autoFlow:'upgrade', requireSession:true  },
-  upgrade_static:        { label:'Static',        badgeColor:'blue',  canNewSale:false, canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:false, canRefundVoid:false, canWristbands:false, autoFlow:'upgrade', requireSession:true  },
+  box_office_supervisor: { label:'BO Supervisor', badgeColor:'',      canNewSale:true,  canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:true,  canDevices:true,  canRefundVoid:true,  canWristbands:true,  autoFlow:null,      requireSession:false },
+  box_office_user:       { label:'BO User',       badgeColor:'',      canNewSale:true,  canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:true,  canDevices:false, canRefundVoid:false, canWristbands:false, autoFlow:null,      requireSession:false },
+  upgrade_mobile:        { label:'Mobile',        badgeColor:'amber', canNewSale:false, canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:false, canSettings:false, canDevices:false, canRefundVoid:false, canWristbands:false, autoFlow:'upgrade', requireSession:true  },
+  upgrade_static:        { label:'Static',        badgeColor:'blue',  canNewSale:false, canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:false, canDevices:false, canRefundVoid:false, canWristbands:false, autoFlow:'upgrade', requireSession:true  },
 };
 
 var currentUser = null;
@@ -10522,11 +10532,13 @@ function applyRoleRestrictions() {
   var lt4Print = document.getElementById('upgConfirmPrintBtn');
   if (lt4Print) lt4Print.style.display = r.canPrint ? '' : 'none';
 
-  // Settings + Operations sidebar sections — hidden for non-settings roles
+  // Settings section (Devices) — only roles that may manage devices.
+  // Operations section (Wristbands) — only roles that may use wristbands.
+  // Gated independently so a role with one but not the other never shows an empty header.
   var settingsSect = document.getElementById('sbSettingsSection');
-  if (settingsSect) settingsSect.style.display = r.canSettings ? '' : 'none';
+  if (settingsSect) settingsSect.style.display = r.canDevices ? '' : 'none';
   var opsSect = document.getElementById('sbOperationsSection');
-  if (opsSect) opsSect.style.display = r.canSettings ? '' : 'none';
+  if (opsSect) opsSect.style.display = r.canWristbands ? '' : 'none';
 
   // Refund / void — box_office only
   document.body.classList.toggle('role-no-refund-void',   !r.canRefundVoid);

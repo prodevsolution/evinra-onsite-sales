@@ -683,7 +683,7 @@
   function boRoleFromAppRoles(appRoles){
     var a = appRoles||[];
     if(a.indexOf(7)>=0 || a.indexOf(1)>=0 || a.indexOf(3)>=0) return 'box_office_supervisor'; // BO Supervisor / Org Owner / Ops Mgr
-    return 'box_office_user';
+    return 'box_office_user'; // Box Office User (TS role 13) + everyone else → onsite sales, no refunds
   }
   function initialsOf(name){ return (name||'?').split(' ').slice(0,2).map(function(w){return w[0]||'';}).join('').toUpperCase(); }
 
