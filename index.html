@@ -1981,6 +1981,32 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
   .header-sess-val.active{color:var(--text);font-weight:600;}
   .header-sess-btn{background:none;border:none;font-size:10px;font-weight:700;color:var(--p);cursor:pointer;padding:3px 7px;border-radius:5px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;transition:background .12s;flex-shrink:0;opacity:.7;}
   .header-sess-btn:hover{background:var(--p-dim);opacity:1;}
+  .header-loc.has-location{border-color:var(--p-border);background:color-mix(in srgb,var(--p) 6%,transparent);}
+  .header-loc.has-location .header-sess-icon,.header-loc.has-location .header-sess-lbl{color:var(--p);}
+  .header-loc-lock{display:flex;align-items:center;color:var(--text3);flex-shrink:0;opacity:.7;margin-left:1px;cursor:help;}
+  /* Terminal switcher dropdown items */
+  .loc-sw-item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:none;border:none;padding:9px 12px;font-size:12.5px;font-family:var(--body);color:var(--text2);cursor:pointer;transition:background .12s,color .12s;}
+  .loc-sw-item:hover{background:var(--bg3);color:var(--text);}
+  .loc-sw-item.active{color:var(--p);font-weight:600;}
+  .loc-sw-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  /* Box Office users table (Users view) */
+  .bo-users-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .bo-users-table th{text-align:left;font-family:var(--mono);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);padding:8px 12px;border-bottom:1px solid var(--border);}
+  .bo-users-table td{padding:11px 12px;border-bottom:1px solid var(--border);vertical-align:middle;}
+  .bo-users-table tbody tr:last-child td{border-bottom:none;}
+  .bo-u-cell{display:flex;align-items:center;gap:10px;}
+  .bo-u-av{width:30px;height:30px;border-radius:50%;background:var(--p);color:#0B0F0E;font-size:10.5px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .bo-u-name{font-weight:600;color:var(--text);}
+  .bo-u-email{font-size:10.5px;font-family:var(--mono);color:var(--text3);}
+  .bo-role-pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:10px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:.04em;}
+  .bo-role-sup{background:color-mix(in srgb,var(--p) 14%,transparent);color:var(--p);}
+  .bo-role-usr{background:var(--bg3);color:var(--text2);border:1px solid var(--border);}
+  .bo-term-select{min-width:180px;height:34px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--text);font-size:12.5px;font-family:var(--body);cursor:pointer;transition:border-color .15s;}
+  .bo-term-select:hover{border-color:var(--p-border);}
+  .bo-term-select:focus{outline:none;border-color:var(--p);box-shadow:0 0 0 3px var(--p-dim);}
+  .bo-term-select:disabled{opacity:.5;cursor:wait;}
+  .bo-term-any{font-size:11.5px;font-family:var(--mono);color:var(--text3);font-style:italic;}
+  .bo-users-hint{margin-top:12px;font-size:11px;font-family:var(--mono);color:var(--text3);line-height:1.5;}
   /* Session switcher dropdown */
   .sess-switcher{position:fixed;z-index:1500;background:var(--bg2);border:1.5px solid var(--border);border-radius:14px;padding:14px 14px 12px;width:298px;box-shadow:var(--shadow-lg);}
   .sess-sw-hdr{font-size:9px;font-weight:700;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--text3);margin-bottom:10px;}
@@ -2106,6 +2132,25 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
         <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="width:20px;height:20px"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
     </div>
+    <!-- Sale terminal badge — box office roles. Editable for supervisors, read-only (lock) for users. -->
+    <div class="header-sess header-loc" id="headerLocBadge" style="display:none">
+      <div class="header-sess-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M9 22V12h6v10"/></svg>
+      </div>
+      <div class="header-sess-body">
+        <div class="header-sess-lbl">Terminal</div>
+        <div class="header-sess-val" id="headerLocVal">No terminal</div>
+      </div>
+      <button class="header-sess-btn" id="headerLocBtn" onclick="openLocSwitcher()" style="display:none" aria-label="Change sale terminal">Change</button>
+      <span class="header-loc-lock" id="headerLocLock" style="display:none" title="Assigned by your supervisor — only a supervisor can change it" aria-label="Terminal locked to your assignment">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </span>
+    </div>
+    <!-- Terminal switcher dropdown (supervisor only; positioned by JS) -->
+    <div id="locSwitcher" class="sess-switcher" style="display:none">
+      <div class="sess-sw-hdr">Switch Terminal</div>
+      <div class="sess-sw-ev-list" id="locSwitcherList"></div>
+    </div>
     <!-- Session badge — upgrade roles only -->
     <div class="header-sess" id="headerSessBadge" style="display:none">
       <div class="header-sess-icon">
@@ -2145,6 +2190,10 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
     <div class="sb-section" id="sbOperationsSection">
       <div class="sb-group">Operations</div>
       <a href="#" class="sb-item" id="sbWristbandsItem" data-view="wristbands" data-tip="Wristbands" onclick="showView('wristbands');return false;"><span class="ev-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="6" width="22" height="12" rx="3"/><path d="M1 10h22M5 6V4M19 6V4"/></svg></span><span class="sb-label">Wristbands</span></a>
+    </div>
+    <div class="sb-section" id="sbManagementSection">
+      <div class="sb-group">Management</div>
+      <a href="#" class="sb-item" id="sbUsersItem" data-view="users" data-tip="Users" onclick="showView('users');return false;"><span class="ev-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="sb-label">Users</span></a>
     </div>
     <div class="sb-section" id="sbSettingsSection">
       <div class="sb-group">Settings</div>
@@ -2579,6 +2628,29 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
   </div>
 
     <!-- ── DEVICES VIEW ────────────────────────────────────────────────── -->
+    <!-- ─── USERS VIEW (supervisor only) ──────────────────────── -->
+    <div id="usersView" style="display:none">
+      <div class="page-header">
+        <div class="page-title">Box Office Users</div>
+        <div class="page-sub">Assign each box office user the Terminal where their sales are registered</div>
+      </div>
+      <div class="card">
+        <div class="card-header" style="justify-content:space-between">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="ev-icon" style="color:var(--p)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span class="card-title">Box Office Team</span>
+          </div>
+          <button class="btn btn-md btn-ghost" id="usersRefreshBtn" onclick="loadUsersView()" aria-label="Refresh users">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            Refresh
+          </button>
+        </div>
+        <div id="usersTableWrap" style="padding:16px">
+          <div style="padding:32px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">Loading users…</div>
+        </div>
+      </div>
+    </div><!-- /usersView -->
+
     <div id="devicesView" style="display:none">
       <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
         <div>
@@ -5104,6 +5176,8 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
       EvinraDB.saveOrder({
         orderNum:   orderNum,
         channel:    'box_office',
+        saleLocationId: (currentUser && currentUser.locationId) || undefined,
+        saleLocation:   (currentUser && currentUser.locationName) || '',
         show:       show,
         eventLabel: eventLabel,
         custName:   custName || 'Walk-in',
@@ -5526,20 +5600,34 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
         view = 'box';
       }
     }
+    // Users management is restricted to BO Supervisors — redirect others
+    if (view === 'users') {
+      var _ru = currentUser ? ROLES[currentUser.role] : null;
+      if (!_ru || !_ru.canManageUsers) {
+        showToast('Access denied — Users is restricted to BO Supervisors.', true);
+        view = 'box';
+      }
+    }
     var bov = document.getElementById('boxOfficeView');
     var dv  = document.getElementById('devicesView');
     var wbv = document.getElementById('wristbandView');
+    var usv = document.getElementById('usersView');
     if (bov) bov.style.display = view === 'box'        ? '' : 'none';
     if (dv)  dv.style.display  = view === 'devices'    ? '' : 'none';
     if (wbv) wbv.style.display = view === 'wristbands' ? '' : 'none';
+    if (usv) usv.style.display = view === 'users'      ? '' : 'none';
     // Mark active sidebar item
     document.querySelectorAll('.sb-item').forEach(function(el){ el.classList.remove('active'); });
     if (view === 'box')        document.querySelector('a[href="index.html"]')?.classList.add('active');
     else if (view === 'devices')    document.querySelector('.sb-item[data-view="devices"]')?.classList.add('active');
     else if (view === 'wristbands') document.querySelector('.sb-item[data-view="wristbands"]')?.classList.add('active');
+    else if (view === 'users')      document.querySelector('.sb-item[data-view="users"]')?.classList.add('active');
     // When switching to wristbands view, refresh the table and filters
     if (view === 'wristbands') {
       wbRefreshView();
+    }
+    if (view === 'users') {
+      loadUsersView();
     }
   }
 
@@ -8419,6 +8507,8 @@ body.wb-tablet-mode.wb-portrait-mode .wb-page-actions .btn-md{flex:1;justify-con
       EvinraDB.saveOrder({
         orderNum:   orderNum,
         channel:    'box_office',
+        saleLocationId: (currentUser && currentUser.locationId) || undefined,
+        saleLocation:   (currentUser && currentUser.locationName) || '',
         show:       showName,
         eventLabel: evLabel,
         custName:   custName || 'Walk-in',
@@ -10168,10 +10258,10 @@ var USERS = [
 ];
 
 var ROLES = {
-  box_office_supervisor: { label:'BO Supervisor', badgeColor:'',      canNewSale:true,  canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:true,  canDevices:true,  canRefundVoid:true,  canWristbands:true,  autoFlow:null,      requireSession:false },
-  box_office_user:       { label:'BO User',       badgeColor:'',      canNewSale:true,  canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:true,  canDevices:false, canRefundVoid:false, canWristbands:false, autoFlow:null,      requireSession:false },
-  upgrade_mobile:        { label:'Mobile',        badgeColor:'amber', canNewSale:false, canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:false, canSettings:false, canDevices:false, canRefundVoid:false, canWristbands:false, autoFlow:'upgrade', requireSession:true  },
-  upgrade_static:        { label:'Static',        badgeColor:'blue',  canNewSale:false, canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:false, canDevices:false, canRefundVoid:false, canWristbands:false, autoFlow:'upgrade', requireSession:true  },
+  box_office_supervisor: { label:'BO Supervisor', badgeColor:'',      canNewSale:true,  canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:true,  canDevices:true,  canRefundVoid:true,  canWristbands:true,  canChangeLocation:true,  canManageUsers:true,  autoFlow:null,      requireSession:false },
+  box_office_user:       { label:'BO User',       badgeColor:'',      canNewSale:true,  canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:true,  canDevices:false, canRefundVoid:false, canWristbands:false, canChangeLocation:false, canManageUsers:false, autoFlow:null,      requireSession:false },
+  upgrade_mobile:        { label:'Mobile',        badgeColor:'amber', canNewSale:false, canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:false, canSettings:false, canDevices:false, canRefundVoid:false, canWristbands:false, canChangeLocation:false, canManageUsers:false, autoFlow:'upgrade', requireSession:true  },
+  upgrade_static:        { label:'Static',        badgeColor:'blue',  canNewSale:false, canLoadOrder:true, canUpgrade:true, canAddItems:true, canPrint:true,  canSettings:false, canDevices:false, canRefundVoid:false, canWristbands:false, canChangeLocation:false, canManageUsers:false, autoFlow:'upgrade', requireSession:true  },
 };
 
 var currentUser = null;
@@ -10334,6 +10424,9 @@ function boSaveSession() {
     staffKey: currentUser.staffKey,
     tenantId: currentUser.tenantId || null,
     tenantName: currentUser.tenantName || '',
+    locationIds: (currentUser.locationIds || []).map(String),
+    locationId:  currentUser.locationId || null,
+    locationName: currentUser.locationName || '',
     showId:   loginSelShowId  || (ltActiveSession ? ltActiveSession.showId  : null),
     eventId:  loginSelEventId || (ltActiveSession ? ltActiveSession.eventId : null),
     ts: Date.now()
@@ -10362,7 +10455,9 @@ function boTryRestoreSession() {
     role: ROLES[data.role] ? data.role : 'box_office_user',
     initials: data.initials || ((data.name||'?')[0]||'').toUpperCase(),
     staffKey: data.staffKey || (data.initials||'').toLowerCase(),
-    tenantId: data.tenantId || null, tenantName: data.tenantName || ''
+    tenantId: data.tenantId || null, tenantName: data.tenantName || '',
+    locationIds: (data.locationIds || []).map(String),
+    locationId: data.locationId || null, locationName: data.locationName || ''
   };
   loginPendingUser = null;
   loginSelShowId   = data.showId  || null;
@@ -10370,6 +10465,8 @@ function boTryRestoreSession() {
 
   applyRoleRestrictions();
   updateHeaderUser();
+  // Load this tenant's Terminal locations, then resolve the active sale terminal.
+  boLoadTerminals().then(boResolveLocation);
 
   var ov = document.getElementById('loginOverlay');
   if (loginSelShowId && loginSelEventId) {
@@ -10539,6 +10636,11 @@ function applyRoleRestrictions() {
   if (settingsSect) settingsSect.style.display = r.canDevices ? '' : 'none';
   var opsSect = document.getElementById('sbOperationsSection');
   if (opsSect) opsSect.style.display = r.canWristbands ? '' : 'none';
+  // Management section (Users) — supervisors only.
+  var mgmtSect = document.getElementById('sbManagementSection');
+  if (mgmtSect) mgmtSect.style.display = r.canManageUsers ? '' : 'none';
+  // Sale-terminal badge in the header reflects the current role (editable vs locked).
+  renderLocationBadge();
 
   // Refund / void — box_office only
   document.body.classList.toggle('role-no-refund-void',   !r.canRefundVoid);
@@ -10627,6 +10729,211 @@ function updateHeaderUser() {
   if (avatarEl) avatarEl.textContent = currentUser.initials;
   if (nameEl)   nameEl.textContent   = currentUser.name;
   if (roleEl)   roleEl.textContent   = r.label;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   SALE TERMINAL (box office locations of type "Terminal")
+   - box_office_user: sales register to their assigned terminal; read-only.
+   - box_office_supervisor: can switch terminal, and manage users' terminals.
+════════════════════════════════════════════════════════════════════ */
+var BO_TERMINALS       = [];                       // Terminal-type op_locations for the tenant
+var BO_TERMINAL_TYPE_RE = /terminal|box.?office/i;
+// EvinraDB exposes query helpers only on a client instance (createClient), not on
+// the root object — instantiate one for the from()/select()/update() CRUD calls.
+var _boDb = null;
+function boDb(){ if(!_boDb && window.EvinraDB && EvinraDB.createClient) _boDb = EvinraDB.createClient(); return _boDb; }
+var BO_ACTIVE_LOC_KEY  = 'evinra-bo-active-loc';   // supervisor's chosen terminal (per browser)
+var BO_BOX_OFFICE_APP_ROLES = [7, 13];             // TS_ROLES ids: Supervisor, User
+
+function boIsBoxOfficeRole(role){ return role === 'box_office_user' || role === 'box_office_supervisor'; }
+function boTermId(t){ return String(t.id || t._id); }
+function boTermById(id){ return BO_TERMINALS.find(function(t){ return boTermId(t) === String(id); }); }
+
+async function boLoadTerminals(){
+  BO_TERMINALS = [];
+  var tid = currentUser && currentUser.tenantId;
+  var db = boDb();
+  if (!db || !tid) return;
+  try {
+    var res = await db.from('op_locations').select().eq('tenant_id', tid);
+    BO_TERMINALS = (res.data || []).filter(function(l){ return BO_TERMINAL_TYPE_RE.test(l.type || ''); });
+  } catch (e) { /* leave empty — UI shows guidance */ }
+}
+
+// Decide which terminal is active for the signed-in user, then paint the badge.
+function boResolveLocation(){
+  if (!currentUser) return;
+  var r = ROLES[currentUser.role] || {};
+  var ids = (currentUser.locationIds || []).map(String);
+  if (r.canChangeLocation) {
+    var saved = null; try { saved = localStorage.getItem(BO_ACTIVE_LOC_KEY); } catch(e){}
+    var pick = (saved && boTermById(saved)) ? saved
+             : (ids.length && boTermById(ids[0])) ? ids[0]
+             : (BO_TERMINALS[0] ? boTermId(BO_TERMINALS[0]) : null);
+    boSetLocation(pick, false);
+  } else {
+    var only = null;
+    for (var i = 0; i < ids.length; i++){ if (boTermById(ids[i])) { only = ids[i]; break; } }
+    boSetLocation(only, false);
+  }
+}
+
+function boSetLocation(locId, persist){
+  if (!currentUser) return;
+  var t = locId ? boTermById(locId) : null;
+  currentUser.locationId   = t ? boTermId(t) : null;
+  currentUser.locationName = t ? (t.name || 'Terminal') : '';
+  if (persist) { try { localStorage.setItem(BO_ACTIVE_LOC_KEY, currentUser.locationId || ''); } catch(e){} }
+  renderLocationBadge();
+  boSaveSession();
+}
+
+function renderLocationBadge(){
+  var badge = document.getElementById('headerLocBadge');
+  if (!badge || !currentUser) return;
+  var r = ROLES[currentUser.role] || {};
+  var isBO = boIsBoxOfficeRole(currentUser.role);
+  badge.style.display = isBO ? '' : 'none';
+  if (!isBO) return;
+  var valEl = document.getElementById('headerLocVal');
+  var btn   = document.getElementById('headerLocBtn');
+  var lock  = document.getElementById('headerLocLock');
+  var has   = !!currentUser.locationName;
+  badge.classList.toggle('has-location', has);
+  if (valEl) {
+    valEl.textContent = has ? currentUser.locationName
+                            : (r.canChangeLocation ? 'Select terminal' : 'No terminal assigned');
+    valEl.classList.toggle('active', has);
+  }
+  if (btn)  btn.style.display  = r.canChangeLocation ? '' : 'none';
+  if (lock) lock.style.display = r.canChangeLocation ? 'none' : '';   // read-only lock for users
+}
+
+// ── Supervisor terminal switcher (header dropdown) ───────────────────
+function openLocSwitcher(){
+  var sw  = document.getElementById('locSwitcher');
+  var bdg = document.getElementById('headerLocBadge');
+  if (!sw || !bdg) return;
+  if (sw.style.display === 'block') { sw.style.display = 'none'; return; }
+  var rect = bdg.getBoundingClientRect();
+  sw.style.top   = (rect.bottom + 8) + 'px';
+  sw.style.right = Math.max(8, window.innerWidth - rect.right) + 'px';
+  sw.style.left  = 'auto';
+  var list = document.getElementById('locSwitcherList');
+  if (!BO_TERMINALS.length) {
+    list.innerHTML = '<div style="padding:14px;font-size:11px;font-family:var(--mono);color:var(--text3);line-height:1.5">No Terminal locations yet.<br>Add them in the Ticket System → General → Locations (type “Terminal”).</div>';
+  } else {
+    list.innerHTML = BO_TERMINALS.map(function(t){
+      var id = boTermId(t); var sel = id === currentUser.locationId;
+      return '<button class="loc-sw-item'+(sel?' active':'')+'" onclick="pickLocation(\''+id+'\')">'
+        + '<span class="loc-sw-name">'+(t.name||'Terminal')+'</span>'
+        + (sel ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : '')
+        + '</button>';
+    }).join('');
+  }
+  sw.style.display = 'block';
+}
+function pickLocation(id){
+  boSetLocation(id, true);
+  var sw = document.getElementById('locSwitcher'); if (sw) sw.style.display = 'none';
+  showToast('Now selling at ' + (currentUser.locationName || 'terminal'));
+}
+// Close the switcher on outside click
+document.addEventListener('click', function(e){
+  var sw = document.getElementById('locSwitcher');
+  if (!sw || sw.style.display !== 'block') return;
+  if (sw.contains(e.target)) return;
+  var bdg = document.getElementById('headerLocBadge');
+  if (bdg && bdg.contains(e.target)) return;
+  sw.style.display = 'none';
+}, true);
+
+/* ── USERS VIEW (supervisor only) — assign each box office user a terminal ── */
+function boRoleLabelFromAppRoles(appRoles){
+  var a = appRoles || [];
+  if (a.indexOf(7) >= 0) return { label: 'Supervisor', cls: 'sup' };
+  if (a.indexOf(13) >= 0) return { label: 'User', cls: 'usr' };
+  return { label: 'Box Office', cls: 'usr' };
+}
+
+async function loadUsersView(){
+  var wrap = document.getElementById('usersTableWrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<div style="padding:32px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--text3)">Loading users…</div>';
+  await boLoadTerminals();
+  var tid = currentUser && currentUser.tenantId;
+  var db = boDb();
+  var users = [];
+  try {
+    if (!db) throw new Error('no db client');
+    var res = await db.from('users').select().eq('tenant_id', tid);
+    if (res.error) throw res.error;
+    users = (res.data || []).filter(function(u){
+      var ar = Array.isArray(u.app_roles) ? u.app_roles : [];
+      return BO_BOX_OFFICE_APP_ROLES.some(function(id){ return ar.indexOf(id) >= 0; });
+    });
+  } catch (e) {
+    wrap.innerHTML = '<div style="padding:32px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--red)">Could not load users. Check the connection and try Refresh.</div>';
+    return;
+  }
+  if (!users.length) {
+    wrap.innerHTML = boUsersEmptyState();
+    return;
+  }
+  var noTerminals = !BO_TERMINALS.length;
+  var banner = noTerminals
+    ? '<div style="margin:0 0 14px;padding:11px 13px;border-radius:9px;border:1px solid var(--amber-border,#a9772e);background:var(--amber-dim,rgba(224,163,97,.12));font-size:11.5px;color:var(--text2);line-height:1.5">'
+      + 'No <strong>Terminal</strong> locations exist yet for this company. Create them in the <strong>Ticket System → General → Locations</strong> (type “Terminal”) before assigning users.</div>'
+    : '';
+  var rows = users.map(function(u){
+    var uid = String(u.id || u._id);
+    var name = u.name || '—';
+    var ini = (name.split(' ').slice(0,2).map(function(w){return (w[0]||'');}).join('') || '?').toUpperCase();
+    var rl = boRoleLabelFromAppRoles(u.app_roles);
+    var assigned = (Array.isArray(u.location_ids) ? u.location_ids.map(String) : []);
+    var curId = assigned.find(function(id){ return boTermById(id); }) || '';
+    var sup = rl.cls === 'sup';
+    var sel = sup
+      ? '<span class="bo-term-any">Any terminal</span>'
+      : '<select class="bo-term-select" aria-label="Terminal for '+name+'" onchange="saveUserTerminal(\''+uid+'\', this.value, this)">'
+          + '<option value="">— Unassigned —</option>'
+          + BO_TERMINALS.map(function(t){ var id=boTermId(t); return '<option value="'+id+'"'+(id===curId?' selected':'')+'>'+(t.name||'Terminal')+'</option>'; }).join('')
+        + '</select>';
+    return '<tr>'
+      + '<td><div class="bo-u-cell"><div class="bo-u-av">'+ini+'</div><div class="bo-u-meta"><div class="bo-u-name">'+name+'</div><div class="bo-u-email">'+(u.email||'')+'</div></div></div></td>'
+      + '<td><span class="bo-role-pill bo-role-'+rl.cls+'">'+rl.label+'</span></td>'
+      + '<td>'+sel+'</td>'
+      + '</tr>';
+  }).join('');
+  wrap.innerHTML = banner
+    + '<table class="bo-users-table"><thead><tr><th>User</th><th>Role</th><th>Terminal</th></tr></thead><tbody>'+rows+'</tbody></table>'
+    + '<div class="bo-users-hint">Supervisors can sell at any terminal. Users are locked to the terminal you assign here.</div>';
+}
+
+function boUsersEmptyState(){
+  return '<div style="padding:42px 20px;text-align:center">'
+    + '<div style="width:46px;height:46px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;background:var(--p-dim);color:var(--p)">'
+    +   '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
+    + '</div>'
+    + '<div style="font-family:var(--display);font-size:14px;font-weight:700;color:var(--text);margin-bottom:5px">No box office users yet</div>'
+    + '<div style="font-size:11.5px;font-family:var(--mono);color:var(--text3);line-height:1.6;max-width:340px;margin:0 auto">Box Office users are created in the <strong>Ticket System → Users</strong> with the “Box Office User” or “Box Office Supervisor” role. They appear here for terminal assignment.</div>'
+    + '</div>';
+}
+
+async function saveUserTerminal(userId, locId, sel){
+  if (sel) sel.disabled = true;
+  try {
+    var db = boDb();
+    if (!db) throw new Error('no db client');
+    var res = await db.from('users').update({ location_ids: locId ? [locId] : [] }).eq('_id', userId);
+    if (res.error) throw res.error;
+    var t = locId ? boTermById(locId) : null;
+    showToast(t ? ('Assigned to ' + (t.name || 'terminal')) : 'Terminal cleared');
+  } catch (e) {
+    showToast('Could not save terminal assignment', true);
+  } finally {
+    if (sel) sel.disabled = false;
+  }
 }
 
 function updateMainSessionBadge() {

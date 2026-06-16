@@ -707,6 +707,7 @@
         userId:u.id, name:u.name, email:u.email, role:boRoleFromAppRoles(u.app_roles),
         initials:ini, staffKey:ini.toLowerCase(),
         tenantId:(data.tenant&&data.tenant.id)||tid, tenantName:(data.tenant&&data.tenant.name)||'',
+        locationIds:(u.location_ids||[]).map(String),
         showId:null, eventId:null, ts:Date.now()
       }));
       window.location.href='index.html';
